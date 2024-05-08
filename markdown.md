@@ -180,7 +180,7 @@ public class Service {
 
     public void increase(int inc) {
         int current = get();
-        System.out.println("Count before is " + next);
+        System.out.println("Count before is " + current);
         int next = current + inc;
         set(next);
         System.out.println("Count after is " + next);
@@ -264,11 +264,11 @@ set(next)
 # Side effects
 
 ```java
-int current = get();                           // get
-System.out.println("Count before is " + next); // printBefore
-int next = current + inc;                      // calcNext
-set(next);                                     // set
-System.out.println("Count after is " + next);  // printAfter
+int current = get();                              // get
+System.out.println("Count before is " + current); // printBefore
+int next = current + inc;                         // calcNext
+set(next);                                        // set
+System.out.println("Count after is " + next);     // printAfter
 ```
 ---
 
