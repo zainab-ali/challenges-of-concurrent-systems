@@ -83,15 +83,6 @@ But for a lot of systems, handling concurrency is vital. If not at the beginning
 
 Concurrency is challenging, but it doesn't have to be.
 
-I'm Zainab, I'm a functional programmer and trainer, and in particular I train people to build concurrent systems.
-
-I love lots of functional languages, but in particular Scala. Scala is a great language for concurrent systems. 
-
-Does anyone here use it? I'm your community rep. I also organize the London Scala User Group, a local meetup. And I'm a Scala ambassador, which means if you're interested in learning more about Scala, please come ask.
-
-I'm also passionate about open source. I contribute to and maintain concurrency related projects in the Typelevel ecosystem.
-
-That said, you don't need to know anything about Scala or Typelevel, or even want to learn. You're not here to learn how to use this ecosystem, but what makes it's good.
 
 ---
 class: middle
@@ -106,7 +97,17 @@ class: middle
 <img src="images/typelevel.jpg" width="300">
 </div>
 </div>
+
 ???
+I'm Zainab, I'm a functional programmer and trainer, and in particular I train people to build concurrent systems.
+
+I love lots of functional languages, but in particular Scala. Scala is a great language for concurrent systems. 
+
+Does anyone here use it? I'm your community rep. I also organize the London Scala User Group, a local meetup. And I'm a Scala ambassador, which means if you're interested in learning more about Scala, please come ask.
+
+I'm also passionate about open source. I contribute to and maintain concurrency related projects in the Typelevel ecosystem.
+
+That said, you don't need to know anything about Scala or Typelevel, or even want to learn. You're not here to learn how to use this ecosystem, but what makes it's good.
 
 ---
 class: middle
@@ -117,6 +118,7 @@ class: middle
  - Asynchronous programming
 ???
 
+5 minutes
 
 ---
 class: center, middle
@@ -125,7 +127,7 @@ class: center, middle
 
 ???
 
-Reasoning is concurrency on paper.
+We're going to explore what concurrency is, and how you can think about it on paper.
 
 ---
 class: middle
@@ -149,7 +151,7 @@ Here is an example of calling the endpoint.
 ---
 class: middle
 
-# Calling it twice
+# At the same time
 
 ```sh
 /increase?inc=2
@@ -210,58 +212,90 @@ This is a very simple bug, some of you may have spotted it already. The importan
 
 
 ???
-There are two basic techniques: identifying shared state, and identifying side-effects.
 
-The source of all concurrency bugs is non-determinism.
 
-By saying these things are concurrent, I mean that they are independent. Unlike a happens before relationship, they happen at the same time.
+By saying these things are concurrent, I mean that they are independent. 
 
-This non-determinism makes things difficult to reason about. Let's say I have an operation that [example of nondeterminism].
+Let's take a look at a non-concurrent relationship. The green get must happen before the green set.
+The blue get must happen before the blue set.
 
-In order to predict what happens, I need to take each of these steps and interleave them in all possible orders, and figure out the result. This can only be done on paper - it's not possible to test for. 
+But the green get and blue get can happen in any order. When our service runs, a single sequence of tasks is run, but it might not be the one we expect. . 
+
+This property is known as non-determinism, and it's the source of all concurrency bugs.
+
+This non-determinism makes things difficult to reason about.
+
+In order to predict all possible outcomes, I need to take each of these steps and interleave them in all possible orders, and figure out the result. This can only be done on paper - it's not possible to test for. 
+
+In this case, there are four outcomes. You can imagine how hard this is when there are more.
+
+There are two basic techniques for helping us: identifying shared mutable data, and identifying side-effects.
 
 ---
 class: middle
 
-# Mutable state
+# Shared mutable data
 
 ```java
 private int count;
 ```
 
+???
+
+When you think about your code, split it into data and functions. Then look at the data that changes. And try and find the bits that are shared between these sequences of tasks. 
+
+In our case, we have a couple of bits of data. We have a string, and the count.
+
+The only thing that's shared is this count.
+
+We refer to things that are changing as mutable.
+
 ---
 class: middle
 
-# Shared mutable state
+# Avoiding shared mutable data
+- Rust: `mut` for explicit mutability
+- Scala: `val`, `case class` explicit immutability.
+- Erlang: can't share mutable data
+???
 
-- Immutable data structures
-- Rust makes mutation very hard
-- Scala has keywords (`var`, `val`)
-- Go: don't share state
+Shared state is the source of all problems. In fact, a lot of languages prevent you from doing it.
+
+We'll look at how to deal with shared state in a minute. First, there's one more thing we need to identify.
+
+---
+class: middle
+
+# I/O operations
+
+```java
+queryDatabase()
+```
+
+```java
+readFile()
+```
+
+```java
+println("Hello")
+```
+
+???
+
+And those are identifying IO operations.
 
 ---
 class: middle
 
 # Side effects
-
-## No side effects
-
+ - mutating data
+ - I/O operations
+ 
+# Pure
 ```java
-first + second
+3 + 4
 ```
-
-## Side effects
-
-```java
-LocalDateTime.now()
-```
-```java
-set(next)
-```
-
 ---
-
-# Side effects
 
 ```java
 int current = get();                              // get
@@ -270,13 +304,20 @@ int next = current + inc;                         // calcNext
 set(next);                                        // set
 System.out.println("Count after is " + next);     // printAfter
 ```
+
 ---
+class: center, middle
 
 <img src="images/ignore-pure-code.png" width="300">
 
 ???
 
-TODO: We could do with a picture here for interleaving the two.
+---
+class: center, middle
+
+<img src="images/sequence-to-interleave.png" width="600">
+
+???
 
 ---
 
@@ -284,13 +325,20 @@ TODO: We could do with a picture here for interleaving the two.
 
 ???
 
-TODO: Image of side effects and pure code.
+If we do this, we can spot the sequence
+We've made an assumption that is incorrect.
+We've assumed that get and set must be performed together, without anything else touching the count.
+This property is known as atomicity. 
+
+Managing shared state in Java can be complex. But you probably shouldn't be doing it in the first place. Your shared state should live in a datastore, not in your service.
+
+Actually, get and set become IO operations, and we'd want to execute it in a single operation.
 
 ---
 class: middle
 
 # Tips for reasoning
- - Avoid shared state
+ - Avoid shared mutable data
  - Identify side effects
 
 ---
@@ -299,35 +347,124 @@ class: center, middle
 # Functional programming
 
 ???
+
+25 minutes
+
+If you structure your code to reason about concurrency, you end up writing something very similar to functional programming.
+Scala is a great language for doing this.
 ---
 class: center, middle
 
 # Systems beneath
 
 ---
-class: middle
+class: center, middle
 
 <img src="images/stack-of-technologies.png" width="600">
 
+???
+Concurrency is about doing multiple things "at the same time", where "at the same time" means in any order.
+
+But realistically, there's a limit to the number of things our computers can do and that's governed by their physical processors. I'm making lots of simplifications here. But say I have two cores, I can only run two things at once. How do I achieve running a hundred?
+
+There are layers of technologies between my app and the instructions on the processor. Something in those layers needs to take my 100 tasks, interleave them, and map their portions onto the two processors. We call this thing a scheduler.
+
+Whenever we have M tasks we want to map onto N things, we have a scheduler. And what's known as M:N threading.
+
+It's entirely up to the scheduler how it does the mapping. It could choose to split each of the tasks up into 100 and execute a piece of each, or execute one then another then another.
+
+
 ---
-class: middle
+class: center, middle
+
+<img src="images/ideal-scheduler.png" width="600">
+
+
+???
+
+The ideal scheduler would try not to split the sequences up too much. That's because of a lot of shared context between tasks in a single sequence.
+
+---
+class: center, middle
+
+# Before Java 21
 
 <img src="images/stack-of-technologies-os-scheduler.png" width="600">
+
+???
+Let's say you had an application using just Java and no libraries. And you're not on Java 21 yet.
+
+The only scheduler you could use was the OS scheduler.
+
 ---
-class: middle
+class: center, middle
+
+<img src="images/linux-scheduler.png" width="600">
+
+???
+
+You give a sequence of tasks to the OS scheduler by creating what's called a thread.
+
+And the OS scheduler arranges those tasks on the processor.
+
+The Linux scheduler is built for fairness. 
+
+As a result of the nature of Java applications, it tends to split threads up much more than it needs to.
+
+This is a huge oversimplification, I'd love to talk to you more about why it does this. The important thing to take away is not that the OS scheduler is bad, it's really good, but just that it's not suited to webservers.
+
+---
+class: center, middle
+
+# After Java 21
 
 <img src="images/stack-of-technologies-loom.png" width="600">
 
----
+???
 
-class: middle
-
-<img src="images/stack-of-technologies-libraries.png" width="600">
+If you don't know what scheduler you're using, it's probably the OS one. Thankfully, Java 21 comes with its own scheduler. You use it by enabling virtual threads.
 
 ---
-class: middle
+class: center, middle
+
+<img src="images/jvm-scheduler.png" width="400">
+
+???
+The JVM scheduler maps your tasks, which you put on virtual threads, down to OS threads, and gives those OS threads to the Linux kernel.
+
+---
+
+class: center, middle
+
+# Async frameworks
+
+<img src="images/typelevel-stack.png" width="600">
+
+???
+
+Of course, you could build really scalable, concurrent applications before Java 21. You just needed to use some libraries.
+
+If you used Scala and the Typelevel stack, you could make use of the Typelevel scheduler.
+
+---
+class: center, middle
+
+<img src="images/typelevel-scheduler.png" width="400">
+
+???
+
+This does the same thing as the JVM's virtual threads. The scheduler, which is part of the cats-effect library, maps your tasks down to platform threads. 
+
+---
+class: center, middle
 
 <img src="images/stack-of-technologies-people.png" width="600">
+
+???
+
+When we think about the stack of technologies, we should remember that they're not built by machines. There are people maintaining them, and they change. One of the benefits of using a library for a specialized use case is that it can adapt quickly, as long as it has a healthy set of maintainers and contributors.
+
+We'll talk a little bit more about how this ties into concurrency in a second.
 
 ---
 class: middle
@@ -335,23 +472,43 @@ class: middle
 # Systems beneath
 
  - Don't use the OS scheduler
- - cats-effect, tokio (Rust), virtual threads all have schedulers
+ - Virtual threads use a scheduler
+ - Typelevel has an excellent one
+
+???
+
+35 minutes
 
 ---
-class: middle
+class: middle, center
 
-# Models of concurrency
-## Async programming
+# Async programming
+
+???
+
+We've talked about how to reason about concurrency, and basic performance.
+
+But we need more than that if we want to write robust applications. And that's because when we program concurrently, we have a totally different control flow. And so different mechanism for building code.
 
 ---
-class: middle
+class: middle, center
 
 # Composition
 
 <img src="images/composition.png" width="600">
 
+???
+
+Something that we care a lot about in the functional programming space is a property known as composition.
+
+Composition is the ability to build a program from smaller blocks.
+
+As a concrete example, let's say I have a different webserver that calls my increase endpoint and at the same time performs some database query. If my database is a bit flaky, I might want to retry that operation. And since I'm doing this as part of a http request, I want this to timeout after 30 seconds.
+
+I want to compose this program from many smaller blocks.
+
 ---
-class: middle
+class: middle, center
 
 # Sequencing
 
@@ -370,25 +527,20 @@ for {
 } yield ()
 ```
 ---
-class: middle
+class: center, middle
 
 # Join
 
 <img src="images/composition-join.png" width="600">
 
+---
+class: middle
+
+# Join
 
 ```scala
 (task, task).parTupled
 ```
-
----
-class: middle
-
-# Async programming
- - Compose tasks
- - In sequence, concurrently
- - Build bigger tasks
- - Retries, error handling, timeouts
  
 ---
 class: middle
@@ -458,13 +610,20 @@ class: center, middle
 
 # You can build concurrent systems
 
+???
+
+45 minutes
+
 ---
 class: middle
-
+# Learn more
+ - [cats-effect](https://typelevel.org/cats-effect/)
 # Watch at home
  - [The case for Effect Systems, Daniel Spiewak](https://www.youtube.com/watch?v=qgfCmQ-2tW0)
  - [Threads at Scale, Daniel Spiewak](https://www.youtube.com/watch?v=PLApcas04V0)
  - [7 deadly sins of concurrent programming, Sarah Zebian & Taoufik Benayad](https://www.youtube.com/watch?v=-E4q1CZg-Jw)
+ 
+???
 ---
 class: middle
 # Later at Devoxx
