@@ -206,6 +206,7 @@ This is a very simple bug, some of you may have spotted it already. The importan
 
 ---
 
+class: center, middle
 # Non-determinism
 
 <img src="images/get-set-combinations.png" width="600">
