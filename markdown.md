@@ -623,13 +623,6 @@ class: middle
  - [Threads at Scale, Daniel Spiewak](https://www.youtube.com/watch?v=PLApcas04V0)
  - [7 deadly sins of concurrent programming, Sarah Zebian & Taoufik Benayad](https://www.youtube.com/watch?v=-E4q1CZg-Jw)
  
-???
----
-class: middle
-# Later at Devoxx
- - What's looming in Spring?
- - Six things we learned implementing Rockstar on Quarkus
- 
 ---
 class: middle
 
